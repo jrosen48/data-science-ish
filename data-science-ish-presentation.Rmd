@@ -1,0 +1,86 @@
+---
+title: "Data Science-Ish: The Use of Mixed Effects (or Multi-Level) Models for Analyzing Complex Data Sources"
+author: "Joshua Rosenberg"
+date: "2019-06-20 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts, custom.css]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+# rmarkdown::render("msu-workshop-2019.rmd", output_file = 'index.html')
+library(knitr)
+library(tidyverse)
+```
+
+# #whoami1
+
+.pull-left[
+* Dr. Joshua Rosenberg
+* Assistant Professor, STEM Education, University of Tennessee, Knoxville
+* Dad (one-year-old toddler!)
+* Primary areas of interest
+  * Data science in education
+  * Data science education
+]
+
+```{r, out.width = "350px", echo = FALSE, fig.align = "center"}
+include_graphics("img/kr-joro.jpg")
+```
+
+---
+class: inverse, center, middle
+# Background/Motivation
+
+---
+
+Mixed effects (or multilevel) models are extensions of linear models (regressions) that are commonly used in experimental research and policy and evaluation contexts, but are less widely-used by data scientists.
+What rail-trail is best?
+
+---
+class: inverse, center, middle
+# Building up to Mixed Effects Models
+---
+In this talk, I aim to introduce mixed effects model as a data science-ish statistical method that can be useful and is easy to estimate and interpret.
+Regression with no pooling
+Regression with complete pooling
+Regression with partial pooling: mixed effects model
+
+---
+class: inverse, center, middle
+# Examples
+---
+I focus on two examples using the lme4 package in R: one each that is focused on:
+traditional research (modeling hierarchically nested data
+student engagement in science
+commercial (estimating the best product when products have different numbers of reviews) uses
+What is the best pair of boots? R.E.I.
+
+---
+class: inverse, center, middle
+# Connection to Bayesian Methods
+---
+
+Finally, I discuss the close connection between mixed effects models and Bayesian methods.
+brms
+
+---
+class: inverse, center, middle
+# Conclusion
+---
+sd
+
+---
+
+class: inverse, center, middle
+# Wrapping up
+---
+
+# Contact
+- [Joshua Rosenberg](mailto:jmrosenberg@utk.edu)
