@@ -559,4 +559,5 @@ class: inverse, center, middle
 
 # Contact
 - [Joshua Rosenberg](mailto:jmrosenberg@utk.edu)
-- Code: 
+- Code: https://github.com/jrosen48/data-science-ish
+- Presentation: 
