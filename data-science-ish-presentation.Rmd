@@ -35,6 +35,11 @@ library(equatiomatic)
 include_graphics("img/kr-joro.jpg")
 ```
 
+## Following along with the presentation
+
+- Code: https://github.com/jrosen48/data-science-ish
+- Presentation: https://jrosen48.github.io/data-science-ish
+
 ---
 class: inverse, center, middle
 # Background/Motivation
@@ -557,7 +562,12 @@ class: inverse, center, middle
 
 ---
 
-# Contact
+# Get in touch!
+
 - [Joshua Rosenberg](mailto:jmrosenberg@utk.edu)
+- GitHub: https://github.com/jrosen48
+- Twitter: [@jrosenberg6432](https://twitter.com/jrosenberg6432)
 - Code: https://github.com/jrosen48/data-science-ish
-- Presentation: 
+- Presentation: https://jrosen48.github.io/data-science-ish
+
+Thank you
