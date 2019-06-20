@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Data Science-Ish: The Use of Mixed Effects (or Multi-Level) Models for Analyzing Complex Data Sources</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Joshua Rosenberg" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis-fonts.css" rel="stylesheet" />
+    <link rel="stylesheet" href="custom.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Data Science-Ish: The Use of Mixed Effects (or Multi-Level) Models for Analyzing Complex Data Sources
+### Joshua Rosenberg
+### 2019-06-20 (updated: 2019-06-20)
+
+---
+
+
+
+
+# #whoami
+
+.pull-left[
+* Joshua Rosenberg, Ph.D.
+* Assistant Professor, STEM Education, University of Tennessee, Knoxville
+* Dad (16 month toddler!)
+* Primary areas of interest
+* Data science in education
+* Data science education
+]
+
+&lt;img src="img/kr-joro.jpg" width="350px" style="display: block; margin: auto;" /&gt;
+
+---
+class: inverse, center, middle
+# Background/Motivation
+---
+
+# Rationale and Aim
+
+- Mixed effects (or multilevel) models are extensions of linear models (regressions)
+- Commonly used in experimental and observational research and policy and evaluation contexts
+- Are less widely-used by data scientists
+- One piece of evidence: Cross Validated has 1,392 questions tagged #mixed-model that are unanswere (of 3,337 total questions)
+- I am trying to introduce mixed effects model as a data science(-*ish*) statistical method that can be useful and is easy to estimate and interpret.
+
+---
+
+# Example: Rail-trails!
+
+## Springfield Greenway
+
+![](img/springfield-greenway.jpg)
+
+*Image from kz440gal on TraiLink.com*
+
+---
+
+# The Rails-to-Trails Conservancy
+
+- Rail trails are railroad tracks that have been converted into pathways/greenways
+- The [Rails-to-Trails Conservancy](https://www.railstotrails.org/) is an organization "dedicated to creating a nationwide network of trails from former rail lines and connecting corridors to build healthier places for healthier people"
+- [TrailLink](https://www.traillink.com/) is their website that lists most of the rail-trails in the United States (~4,000 total)
+- Let's take a look at their website
+---
+# TrailLink.com
+
+- Which rail-trail is best?
+- In one state
+- Across the nation
+- This can be a (surprisingly) difficult question to answer
+- View trails in TN here: https://www.traillink.com/trailsearch/?mmloc=tn
+
+**&lt;center&gt;What do you think? Which is (or, which are) the best?&lt;/center&gt;**
+
+&lt;center&gt;Discuss your answer with an elbow partner!&lt;/center&gt;
+
+---
+class: inverse, center, middle
+# Building up to Mixed Effects Models
+---
+
+# One data-based solution
+
+## A regression model!
+
+
+
+`$$\text{y} = \alpha + \beta_{1}(\text{var1}) + \beta_{2}(\text{var2}) + \epsilon$$`
+
+---
+
+# Accessing rail-trails data
+
+- Use the `railtrails` R package
+- Install via `install.packages('railtrails')`)
+
+
+```r
+library(railtrails)
+
+railtrails
+```
+
+```
+## # A tibble: 3,846 x 11
+##    state name  distance surface category mean_review description n_reviews
+##    &lt;chr&gt; &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;          &lt;int&gt; &lt;chr&gt;           &lt;int&gt;
+##  1 AK    Chas…     14   Dirt, … Rail-Tr…           4 "Though cl…         1
+##  2 AK    Tony…     11   Asphalt Rail-Tr…           5 "The Tony …         5
+##  3 AK    Bird…     13   Asphalt Rail-Tr…           5 "The Bird …         3
+##  4 AK    Camp…      7.5 Asphal… Greenwa…           5 "The Campb…         3
+##  5 AK    Goos…      1.5 Asphal… Greenwa…           0 "The sceni…         0
+##  6 AK    Home…      4   Asphalt Greenwa…           5 "On the so…         1
+##  7 AK    Lani…      3.9 Asphal… Greenwa…           3 "The Lanie…         1
+##  8 AK    Palm…      6.1 Gravel  Rail-Tr…           0 "As its na…         0
+##  9 AK    Ship…      2.6 Asphalt Rail-Tr…           4 "Ship Cree…         1
+## 10 AL    Chie…     33   Asphalt Rail-Tr…           5 "In northe…        77
+## # … with 3,836 more rows, and 3 more variables: raw_reviews &lt;list&gt;,
+## #   lat &lt;dbl&gt;, lng &lt;dbl&gt;
+```
+
+---
+
+# Let's focus in on Tennessee
+
+
+```r
+library(dplyr)
+
+d &lt;- railtrails %&gt;% 
+  filter(state == "TN")
+
+d
+```
+
+```
+## # A tibble: 55 x 11
+##    state name  distance surface category mean_review description n_reviews
+##    &lt;chr&gt; &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;          &lt;int&gt; &lt;chr&gt;           &lt;int&gt;
+##  1 TN    Tenn…     4.73 Asphal… Rail-Tr…           5 "The Tenne…         9
+##  2 TN    Bets…     2    Asphalt Rail-Tr…           0 "The Betsy…         0
+##  3 TN    Alta…     0.7  Asphal… Greenwa…           0 "Alta Lake…         0
+##  4 TN    Bear…     2.7  Asphalt Greenwa…           0 "From Thir…         0
+##  5 TN    Big …     1    Concre… Rail-Tr…           5 "Big River…         2
+##  6 TN    Bria…     1.1  Asphalt Rail-Tr…           0 "The Brian…         0
+##  7 TN    Broo…     0.4  Asphalt Greenwa…           3 "Brookmead…         5
+##  8 TN    Cave…     0.95 Asphalt Greenwa…           0 "Cavet Sta…         0
+##  9 TN    Chat…    13.1  Concre… Greenwa…           5 "The Chatt…        17
+## 10 TN    Clar…     4.6  Asphalt Rail-Tr…           5 "The 4.6-m…        21
+## # … with 45 more rows, and 3 more variables: raw_reviews &lt;list&gt;,
+## #   lat &lt;dbl&gt;, lng &lt;dbl&gt;
+```
+
+---
+
+# Let's fit a linear model
+
+## Unnesting the reviews
+
+
+```r
+d &lt;- d %&gt;% 
+  unnest(raw_reviews) %&gt;% 
+  rename(raw_review = raw_reviews)
+```
+
+- `lm()` will automatically recognize that `name` is a categorical variable
+
+
+```r
+m1 &lt;- lm(raw_review ~ -1 + name, data = d)
+```
+
+- The output is difficult to read (because of the number of trails/`name`s)!
+
+---
+
+# Plotting the results
+
+
+```r
+library(ggplot2)
+library(broom)
+tidy(m1) %&gt;% 
+  ggplot(aes(x = reorder(term, estimate), y = estimate)) +
+  geom_point(color = "red") +
+  coord_flip()
+```
+
+&lt;img src="data-science-ish-presentation_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Plotting the results with SEs
+
+
+
+
+```r
+tidy(m1) %&gt;% 
+  ggplot(aes(x = reorder(term, estimate), y = estimate)) +
+  geom_point(color = "red") +
+  geom_errorbar(aes(ymin = estimate - std.error,
+                    ymax = estimate + std.error)) +
+  coord_flip()
+```
+
+.pull-left[
+![](data-science-ish-presentation_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+]
+
+.pull-right[
+**Which trail is best?**
+- White House Greenway?
+- Springfield Greenway?
+- North Chicamauga Creek Greenway?
+]
+
+---
+
+# Interpreting the output
+
+- Gelman and Hill (2007) consider this model to be the model with *no pooling*:
+- The estimates for the trail means are not changed based on 'pooling' together the estimates (or in any other way)
+- The problem is that if we only consider the mean, then we may be ignoring how uncertain the estimates are
+- Ignoring this uncertainity may mean that the estimates are not good: they may be biased
+
+
+
+$$
+`\begin{aligned}
+\text{raw_review} &amp;= \beta_{0}(\text{name}_{\text{Big River Crossing}})\ + \\
+&amp;\quad \beta_{1}(\text{name}_{\text{Brookmeade Greenway}})\ + \\
+&amp;\quad \beta_{2}(\text{name}_{\text{Chattanooga Riverwalk (Tennessee Riverpark)}})\ + \\
+&amp;\quad \beta_{3}(\text{name}_{\text{Clarksville Greenway}})\ + \\
+...
+&amp;\quad \beta_{35}(\text{name}_{\text{Wolftever Creek Greenway}})\ + \\
+&amp;\quad \epsilon
+\end{aligned}`
+$$
+
+---
+
+# Other approaches
+
+## What if we ignored the trail completely?
+
+
+```r
+m2 &lt;- lm(raw_review ~ 1, data = d)
+
+m2
+```
+
+```
+## 
+## Call:
+## lm(formula = raw_review ~ 1, data = d)
+## 
+## Coefficients:
+## (Intercept)  
+##       4.343
+```
+
+Which trail is best?
+
+¯\_(ツ)_/¯ 
+
+---
+
+
+# Interpreting the output
+
+- This can be considered a model with *complete pooling*
+- The estimates are affected by pooling them together
+
+The model is pretty simple: Not sure we need to plot this...
+
+.pull-left[
+
+```r
+tidy(m2) %&gt;% 
+  ggplot(aes(x = term, y = estimate)) +
+  geom_errorbar(aes(ymin = estimate - std.error,
+                    ymax = estimate + std.error)) +
+  geom_point() +
+  coord_flip()
+```
+
+&lt;img src="data-science-ish-presentation_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
+]
+
+.pull-right[
+
+
+```r
+extract_eq(m2, use_coef = TRUE)
+```
+
+$$
+\text{raw_review} = 4.34 + \epsilon
+$$
+]
+
+---
+
+# The mixed effects model approach
+
+- Models the reviews as if they are 'grouped' within trails
+- The trail (name) is considered to be a 'grouping factor'
+- (also known as a 'random effect')
+
+
+```r
+library(lme4) # the most common R package for mixed effects models; see also nlme
+
+m3 &lt;- lmer(raw_review ~ 1 +
+             (1|name),
+           data = d)
+```
+
+This model can be written as an extension of a linear model:
+
+$$
+{ y }=\alpha _{ j }+\epsilon +\\ 
+\alpha _{ j }=\alpha _{ 0 }_{ 0 }+\sigma_j
+$$
+
+---
+
+# Checking out the output
+
+
+```r
+m3
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: raw_review ~ 1 + (1 | name)
+##    Data: d
+## REML criterion at convergence: 579.7115
+## Random effects:
+##  Groups   Name        Std.Dev.
+##  name     (Intercept) 0.4236  
+##  Residual             0.9184  
+## Number of obs: 207, groups:  name, 36
+## Fixed Effects:
+## (Intercept)  
+##       4.234
+```
+
+---
+
+# Let's create a plot of the output
+
+
+```r
+m3_intercept &lt;- tidy(m3) %&gt;% filter(term == "(Intercept)")
+
+m3_ranef &lt;- ranef(m3) %&gt;% as_tibble()
+
+p3 &lt;- m3_ranef %&gt;% 
+  ggplot(aes(x = grp, y = condval + m3_intercept$estimate)) +
+  geom_errorbar(aes(ymin = (condval + m3_intercept$estimate) - condsd,
+                    ymax = (condval + m3_intercept$estimate) + condsd)) +
+  geom_point(color = "green") +
+  coord_flip()
+```
+
+---
+
+# Looking at the plot
+
+
+```r
+p3
+```
+
+![](data-science-ish-presentation_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+
+---
+
+# Interpreting the output
+
+## Which trail is best?
+
+- Clarksville Greenway?
+- Springfield Greenway?
+- Murfeesboro's Stones River Greenway System?
+
+## What is the model 'like'?
+
+- This model represents the *partial pooling*
+- Grouping factors/random effects:
+  - A *variable* with coefficient estimates that differ by group and are modeled with a probability distribution
+  - The estimate for the coefficient depends on *how different* the observations associated with the group are and *how systematic* the differences are (relative to all of the observations)
+- The largest coefficient estimates will be associated with groups that are systematically different
+- The smallest coefficient estimates will be associated with groups that are either not very different or are not systematically so
+---
+
+# Let's create a graph to compare
+
+
+```r
+dt &lt;- tidy(m1) %&gt;% mutate(term = str_replace(term, "name", ""))
+
+pc &lt;- m3_ranef %&gt;% 
+  ggplot(aes(x = grp, y = condval + m3_intercept$estimate)) +
+  geom_point(color = "darkgreen") +
+  geom_errorbar(aes(ymin = (condval + m3_intercept$estimate) - condsd,
+                    ymax = (condval + m3_intercept$estimate) + condsd),
+                color = 'green') +
+  geom_point(data = dt, aes(x = reorder(term, estimate), y = estimate), color = "red", inherit.aes = FALSE) +
+  geom_errorbar(data = dt, aes(x = reorder(term, estimate),
+                               ymin = estimate - std.error,
+                               ymax = estimate + std.error), color = 'tomato', inherit.aes = FALSE) +
+  coord_flip() +
+  labs(subtitle = "Red = regression estimates; Green = mixed effects model estimates")
+```
+
+---
+# Let's plot the comparisons
+
+```r
+pc
+```
+
+![](data-science-ish-presentation_files/figure-html/unnamed-chunk-20-1.png)&lt;!-- --&gt;
+---
+# Comparing models with no pooling est.
+
+```r
+pc + geom_hline(yintercept = tidy(m2) %&gt;% pull(estimate), color = "darkgray")
+```
+
+![](data-science-ish-presentation_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
+---
+
+# So, which trail is best?
+
+.pull-left[
+## Candidate trails from the regression
+- White House Greenway
+- Springfield Greenway
+- North Chicamauga Creek Greenway
+]
+
+.pull-right[
+## Candidate trails from the mixed effects model
+- Clarksville Greenway
+- Springfield Greenway
+- Murfeesboro's Stones River Greenway System
+]
+
+- The estimates for the groups from the regression tend to me more confident
+  - They exhibit *no pooling*
+- The estimates for the groups from the mixed effects model are nearer to the mean
+  - They exhibit *partial pooling*
+  - Especially for trails with few observations (i.e., North Chicamauga Creek and White House)
+- What about the *complete pooling* estimates?
+  - Not relevant but is often (implicitly) used: Other estimates can be biased
+
+---
+class: inverse, center, middle
+# Extending the mixed effects model
+---
+
+# Adding another grouping factor
+
+- We used a 'varying intercepts' model
+- We can add more grouping factors/random effects
+
+
+```r
+railtrails &lt;- railtrails %&gt;% 
+  unnest(raw_reviews) %&gt;% 
+  rename(raw_review = raw_reviews)
+
+m4 &lt;- lmer(raw_review ~ 1 +
+             (1|name) + 
+             (1|state), 
+           data = railtrails)
+```
+---
+# Inspecting the results
+
+
+```r
+m4
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: raw_review ~ 1 + (1 | name) + (1 | state)
+##    Data: railtrails
+## REML criterion at convergence: 44701.29
+## Random effects:
+##  Groups   Name        Std.Dev.
+##  name     (Intercept) 0.5529  
+##  state    (Intercept) 0.0873  
+##  Residual             0.9454  
+## Number of obs: 15562, groups:  name, 2539; state, 51
+## Fixed Effects:
+## (Intercept)  
+##       4.017
+```
+---
+# Examining the ICC
+
+Is there systematic variation at the state level?
+
+The Intra-class Correlation (ICC) is an estimate for the relationship between higher or lower grouping factor/random effect estimates and the outcome (*y*-variable). 
+
+
+```r
+library(performance)
+
+icc(m4)
+```
+
+```
+## # Intraclass Correlation Coefficient
+## 
+##      Adjusted ICC: 0.260
+##   Conditional ICC: 0.260
+```
+
+---
+
+# Adding a predictor variable - distance
+
+
+```r
+m5 &lt;- lmer(raw_review ~ 1 +
+             scale(distance) +
+             (1|name) + 
+             (1|state), 
+           data = railtrails)
+
+m5
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: raw_review ~ 1 + scale(distance) + (1 | name) + (1 | state)
+##    Data: railtrails
+## REML criterion at convergence: 44696.01
+## Random effects:
+##  Groups   Name        Std.Dev.
+##  name     (Intercept) 0.55044 
+##  state    (Intercept) 0.08726 
+##  Residual             0.94551 
+## Number of obs: 15562, groups:  name, 2539; state, 51
+## Fixed Effects:
+##     (Intercept)  scale(distance)  
+##         4.04056          0.08019
+```
+
+---
+
+# Preparing other variables - surface
+
+
+```r
+library(forcats)
+library(stringr)
+
+railtrails &lt;- mutate(railtrails,
+             surface_rc = case_when(
+                 surface == "Asphalt" ~ "Paved",
+                 surface == "Asphalt, Concrete" ~ "Paved",
+                 surface == "Concrete" ~ "Paved",
+                 surface == "Asphalt, Boardwalk" ~ "Paved",
+                 str_detect(surface, "Stone") ~ "Crushed Stone",
+                 str_detect(surface, "Ballast") ~ "Crushed Stone",
+                 str_detect(surface, "Gravel") ~ "Crushed Stone",
+                 TRUE ~ "Other"
+             )
+)
+```
+
+---
+
+# Adding a predictor variable - surface
+
+
+```r
+m6 &lt;- lmer(raw_review ~ 1 +
+             scale(distance) + 
+             surface_rc +
+             (1|name) + 
+             (1|state), 
+           data = railtrails)
+
+m6
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: raw_review ~ 1 + scale(distance) + surface_rc + (1 | name) +  
+##     (1 | state)
+##    Data: railtrails
+## REML criterion at convergence: 44671.95
+## Random effects:
+##  Groups   Name        Std.Dev.
+##  name     (Intercept) 0.54193 
+##  state    (Intercept) 0.08014 
+##  Residual             0.94593 
+## Number of obs: 15562, groups:  name, 2539; state, 51
+## Fixed Effects:
+##     (Intercept)  scale(distance)  surface_rcOther  surface_rcPaved  
+##         3.93331          0.11029          0.03028          0.19065
+```
+
+---
+class: inverse, center, middle
+# Connection to Bayesian Methods
+---
+
+# (A very tiny introduction to) Bayesian methods
+
+- Bayesian methods can be distinguished from frequentist methods in two key ways:
+  1. Describing estimates with *probability* statements/distributions
+  1. Using *prior* information in the estimation process
+
+- How is this different from the models we estimated?
+  1. We focused on point estimates (and their standard errors/deviations)
+  1. Partial pooling can be considered an instance of using prior information for the grouping factor/random effects estimates
+  
+- Also, the estimation process is *usually* different, but this is not a distinguishing feature
+
+---
+
+# Estimating a model with brms
+
+*(not run)*
+
+
+```r
+library(brms)
+m7 &lt;- brm(raw_review ~ 1 +
+             scale(distance) + 
+             surface_rc +
+             (1|name) + 
+             (1|state), 
+           data = railtrails)
+
+m7
+```
+
+Results [should be very similar to those for `m6`](https://joshuamrosenberg.com/blog/explorations-in-markov-chain-monte-carlo-mcmc/).
+
+Someone please run this (when you have some time) and report back the results.
+
+---
+class: inverse, center, middle
+# Other Extensions
+---
+
+# Modeling complex data structures
+
+- Additional grouping factors/random effects can easily be added
+  - Cross-classified grouping factors/random effects can be useful (e.g., when you have time-dependent and location-specific data)
+  - Can add an arbitrary number of grouping factors
+  - Random slopes allow for predictor variables to be modeled with slopes that differ based on the group (e.g., if there were a variable for "the weather on the day the trail was reviewed" that could have a different effect depending on the trail)
+  - Can easily be used to estimate non-linear models (i.e., models with dichotomous or count outcomes)
+  - Can estimate multivariate models (with brms)
+
+---
+class: inverse, center, middle
+# Wrapping up
+---
+
+# Summary and Resources
+
+- Mixed effects models are extensions of linear models that allow for complex data
+- They are easy to estimate and to interpret (and to compare to simpler models)
+- Their extensions make them useful for a range of problems
+- They are actively being developed and there is an active community of users to provide support
+- Resources:
+  - [Gelman and Hill (2006)](https://www.amazon.com/Analysis-Regression-Multilevel-Hierarchical-Models/dp/052168689X)
+  - [West, Welch, and Galecki (2014)](https://www.amazon.com/Linear-Mixed-Models-Practical-Statistical/dp/1584884800)
+  - [Kruschke (2014)](https://www.amazon.com/Doing-Bayesian-Data-Analysis-Tutorial/dp/0123814855)
+
+---
+
+# Contact
+- [Joshua Rosenberg](mailto:jmrosenberg@utk.edu)
+- Code:
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
