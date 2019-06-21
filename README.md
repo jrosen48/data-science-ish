@@ -10,6 +10,10 @@ This is a repository for the [*KnoxData*](https://knoxdata.org/) presentation [*
 
 The slides are available here: https://jrosen48.github.io/data-science-ish
 
+## Video
+
+Video of the talk is available here: https://www.youtube.com/watch?v=1YY2FoCFIm4
+
 ## Code and Libraries Used
 
 The code used to create the presentation is in `data-science-ish-presentation.Rmd`.
