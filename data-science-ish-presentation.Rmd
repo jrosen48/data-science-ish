@@ -26,9 +26,9 @@ library(equatiomatic)
 * Joshua Rosenberg, Ph.D.
 * Assistant Professor, STEM Education, University of Tennessee, Knoxville
 * Dad (16 month toddler!)
-* Primary areas of interest
-* Data science in education
-* Data science education
+* Primary areas of interest:
+  * Data science in education
+  * Data science education
 ]
 
 ```{r, out.width = "350px", echo = FALSE, fig.align = "center"}
@@ -286,11 +286,11 @@ m3 <- lmer(raw_review ~ 1 +
            data = d)
 ```
 
-This model can be written as an extension of a linear model:
+This model can be written as an extension of a linear model, where *j* indexes the different trails.:
 
 $$
-{ y }=\alpha _{ j }+\epsilon +\\ 
-\alpha _{ j }=\alpha _{ 0 }_{ 0 }+\sigma_j
+{y}=\alpha _{ j }+\epsilon +\\ 
+\alpha _{ j }=\alpha _{ 00 }+\sigma_j
 $$
 
 ---
@@ -340,10 +340,10 @@ p3
 
 - This model represents the *partial pooling*
 - Grouping factors/random effects:
-  - A *variable* with coefficient estimates that differ by group and are modeled with a probability distribution
-  - The estimate for the coefficient depends on *how different* the observations associated with the group are and *how systematic* the differences are (relative to all of the observations)
-- The largest coefficient estimates will be associated with groups that are systematically different
-- The smallest coefficient estimates will be associated with groups that are either not very different or are not systematically so
+- A *variable* with coefficient estimates that differ by group and are modeled with a probability distribution
+- The estimate for the coefficient depends on *how different* the observations associated with the group are and *how systematic* the differences are (relative to all of the observations)
+  - The largest coefficient estimates will be associated with groups that are systematically different
+  - The smallest coefficient estimates will be associated with groups that are either not very different or are not systematically so
 ---
 
 # Let's create a graph to compare
@@ -436,7 +436,6 @@ The Intra-class Correlation (ICC) is an estimate for the relationship between hi
 
 ```{r}
 library(performance)
-
 icc(m4)
 ```
 
@@ -463,16 +462,16 @@ library(forcats)
 library(stringr)
 
 railtrails <- mutate(railtrails,
-             surface_rc = case_when(
-                 surface == "Asphalt" ~ "Paved",
-                 surface == "Asphalt, Concrete" ~ "Paved",
-                 surface == "Concrete" ~ "Paved",
-                 surface == "Asphalt, Boardwalk" ~ "Paved",
-                 str_detect(surface, "Stone") ~ "Crushed Stone",
-                 str_detect(surface, "Ballast") ~ "Crushed Stone",
-                 str_detect(surface, "Gravel") ~ "Crushed Stone",
-                 TRUE ~ "Other"
-             )
+                     surface_rc = case_when(
+                       surface == "Asphalt" ~ "Paved",
+                       surface == "Asphalt, Concrete" ~ "Paved",
+                       surface == "Concrete" ~ "Paved",
+                       surface == "Asphalt, Boardwalk" ~ "Paved",
+                       str_detect(surface, "Stone") ~ "Crushed Stone",
+                       str_detect(surface, "Ballast") ~ "Crushed Stone",
+                       str_detect(surface, "Gravel") ~ "Crushed Stone",
+                       TRUE ~ "Other"
+                     )
 )
 ```
 
@@ -505,30 +504,33 @@ class: inverse, center, middle
 - How is this different from the models we estimated?
   1. We focused on point estimates (and their standard errors/deviations)
   1. Partial pooling can be considered an instance of using prior information for the grouping factor/random effects estimates
-  
+
 - Also, the estimation process is *usually* different, but this is not a distinguishing feature
 
 ---
 
 # Estimating a model with brms
 
-*(not run)*
-
-```{r, eval = FALSE}
+```{r, eval = TRUE, message = FALSE}
 library(brms)
 m7 <- brm(raw_review ~ 1 +
-             scale(distance) + 
-             surface_rc +
-             (1|name) + 
-             (1|state), 
-           data = railtrails)
+            scale(distance) + 
+            surface_rc +
+            (1|name) + 
+            (1|state), 
+          iter = 1000, chains = 3, cores = 3,
+          data = railtrails)
+```
 
+---
+
+# Taking a peak at the model output
+
+```{r}
 m7
 ```
 
 Results [should be very similar to those for `m6`](https://joshuamrosenberg.com/blog/explorations-in-markov-chain-monte-carlo-mcmc/).
-
-Someone please run this (when you have some time) and report back the results.
 
 ---
 class: inverse, center, middle
@@ -538,11 +540,11 @@ class: inverse, center, middle
 # Modeling complex data structures
 
 - Additional grouping factors/random effects can easily be added
-  - Cross-classified grouping factors/random effects can be useful (e.g., when you have time-dependent and location-specific data)
-  - Can add an arbitrary number of grouping factors
-  - Random slopes allow for predictor variables to be modeled with slopes that differ based on the group (e.g., if there were a variable for "the weather on the day the trail was reviewed" that could have a different effect depending on the trail)
-  - Can easily be used to estimate non-linear models (i.e., models with dichotomous or count outcomes)
-  - Can estimate multivariate models (with brms)
+- Cross-classified grouping factors/random effects can be useful (e.g., when you have time-dependent and location-specific data)
+- Can add an arbitrary number of grouping factors
+- Random slopes allow for predictor variables to be modeled with slopes that differ based on the group (e.g., if there were a variable for "the weather on the day the trail was reviewed" that could have a different effect depending on the trail)
+- Can easily be used to estimate non-linear models (i.e., models with dichotomous or count outcomes)
+- Can estimate multivariate models (with brms)
 
 ---
 class: inverse, center, middle
